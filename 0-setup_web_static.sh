@@ -1,35 +1,18 @@
-#!/bin/bash
-
-# Install Nginx if not already installed
-if ! command -v nginx &> /dev/null; then
-    sudo apt-get update
-    sudo apt-get -y install nginx
-fi
-
-# Create necessary directories if they don't exist
-sudo mkdir -p /data/web_static/releases/test /data/web_static/shared
-
-# Create a fake HTML file for testing
+#!/usr/bin/env bash
+# Prepare web server for deployment
+apt-get -y update
+apt-get -y install nginx
+mkdir -p /data/web_static/shared/
+mkdir -p /data/web_static/releases/test/
 echo "<html>
   <head>
   </head>
   <body>
     Holberton School
   </body>
-</html>" | sudo tee /data/web_static/releases/test/index.html > /dev/null
-
-# Create or recreate symbolic link
-sudo ln -sf /data/web_static/releases/test/ /data/web_static/current
-
-# Set ownership recursively
-sudo chown -R ubuntu:ubuntu /data/
-
-# Update Nginx configuration
-nginx_config="/etc/nginx/sites-available/default"
-sudo sed -i '/^}/i \\n\tlocation /hbnb_static/ {\n\t\talias /data/web_static/current/;\n\t}\n' $nginx_config
-
-# Restart Nginx
-sudo service nginx restart
-
-exit 0
-
+</html>" > /data/web_static/releases/test/index.html
+ln -sf /data/web_static/releases/test/ /data/web_static/current
+chown -R ubuntu:ubuntu /data/
+grep -q "location /hbnb_static" /etc/nginx/sites-available/default || \
+sed -i "/^}/i \ \n\tlocation /hbnb_static {\n\t\talias /data/web_static/current;\n\t\tautoindex off;\n\t}" /etc/nginx/sites-available/default
+service nginx restart
